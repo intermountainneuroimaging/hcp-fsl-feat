@@ -1,0 +1,22 @@
+
+# TO DO LIST
+
+Version 1.0 Features
+# -- all configs will be stored in template fsf
+# -- logic needed for EVs only -- attach them to the correct placeholder?
+#     -- assume from bids format EV name is same as event name
+#     -- assume from fsl 3-column format EV name is the same as text file name... if not through error?
+#       ** consider other methods
+
+# -- copy fsl2conn and bids2fsl python scripts from AIM (9) and CBD? use this method for bids formatted inputs. they need to be included in the output
+
+# -- consider metadata or other cleanup steps. Use new flatten zip method
+#    -- output zip hierarchy will be zip job-id/sub-XX/ses-XX/*.feat
+
+
+FSL-FEAT INPUTS
+Version 1.0 Features
+# additional gear needs to be written to take fmriprep / HCPPipe results and externalize files
+#     ** config option for pipeline input, concat or leave tasks separate, add dummy scans (replace with white noise & add to confounds regressor), confounds regressor list?
+
+
