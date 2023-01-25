@@ -66,11 +66,17 @@ RUN echo "Installing FSL conda environment ..." \
 ######################################################
 # FLYWHEEL GEAR STUFF...
 
+USER root
+RUN adduser --disabled-password --gecos "Flywheel User" flywheel
+
+ENV USER="flywheel"
+
 # Add poetry oversight.
 RUN apt-get update &&\
     apt-get install -y --no-install-recommends \
 	 git \
-     software-properties-common &&\
+     zip \
+    software-properties-common &&\
 	add-apt-repository -y 'ppa:deadsnakes/ppa' &&\
 	apt-get update && \
 	apt-get install -y --no-install-recommends python3.9\
@@ -96,7 +102,9 @@ RUN python3.9 -m pip install --upgrade pip && \
 ENV PATH="$POETRY_HOME/bin:$PATH"
 
 # get-poetry respects ENV
-RUN curl -sSL https://install.python-poetry.org | python3 -
+RUN curl -sSL https://install.python-poetry.org | python3 - ;\
+    ln -sf ${POETRY_HOME}/lib/poetry/_vendor/py3.9 ${POETRY_HOME}/lib/poetry/_vendor/py3.8; \
+    chmod +x "$POETRY_HOME/bin/poetry"
 
 # Installing main dependencies
 ARG FLYWHEEL=/flywheel/v0

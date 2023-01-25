@@ -1,21 +1,11 @@
 from pathlib import Path
-import sys, os, nipype, re
-from datetime import datetime as dt
-import glob
+import os, re
 import subprocess as sp
 import pandas as pd
-from datetime import datetime
-from time import sleep
-import nibabel as nib
-import numpy as np
 from bs4 import BeautifulSoup
-import shutil
 import base64
 import argparse
 from functools import partial
-
-from os.path import join as pjoin, split as psplit
-import tempfile
 
 import logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
@@ -110,12 +100,16 @@ def update_image_refs(obj,parentPath,htmlpath):
 def cleanup_image_refs(html):
     "update any remaining image links"
     for link in html.findAll(url_can_be_converted_to_data):
-        
-        with open(link['src'].replace("file:",""), "rb") as image_file:
-            encoded_string = base64.b64encode(image_file.read())
+        if "tsplot" in link['src']:
+            with open(os.path.join("tsplot",link['src'].replace("file:","")), "rb") as image_file:
+                encoded_string = base64.b64encode(image_file.read())
 
-        link['src'] = "data:image/png;base64, " + encoded_string.decode('utf-8')
-        
+            link['src'] = "data:image/png;base64, " + encoded_string.decode('utf-8')
+        else:
+            with open(link['src'].replace("file:",""), "rb") as image_file:
+                encoded_string = base64.b64encode(image_file.read())
+
+            link['src'] = "data:image/png;base64, " + encoded_string.decode('utf-8')
             
         
 def execute_cmd(cmd, dryrun=False):
@@ -138,7 +132,8 @@ def main(featfile):
     os.chdir(featfile.parent)
     
     # ---- build "base header for html with main links" ---- #
-    data="/projects/lesh2786/sdk_basics/feat_htmls/base.html"
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    data=os.path.join(dir_path, "base.html")
     # load the base file...
     with open(data) as inf:
         txt = inf.read()
@@ -222,7 +217,10 @@ def main(featfile):
         # add inital report "table" to base, then look through all subsequent files
         new_div = soup.new_tag("div",id=os.path.relpath(Path(f), start = featfile.parent))
         new_tag = soup.new_tag("h2")
-        new_tag.string=allrefs[idxx]
+        if allrefs[idxx]:
+            new_tag.string = allrefs[idxx]
+        else:
+            new_tag.string = allfiles[idxx]
         
         new_return_link=soup.new_tag("a",href="#summary")
         new_return_link.string = "Return to Top"

@@ -20,6 +20,9 @@ flywheel-gear-toolkit = "^0.6.6"
 flywheel-sdk = "^16.8.0"
 psutil = "^5.9.0"
 flywheel-bids = {git = "https://gitlab.com/flywheel-io/public/bids-client.git", rev = "master"}
+beautifulsoup4 = "^4.11.1"
+errorhandler = "^2.0.1"
+nibabel = "^5.0.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.1.2"

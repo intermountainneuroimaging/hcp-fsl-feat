@@ -102,23 +102,22 @@
         },
         "gear-builder": {
             "category": "analysis",
-            "image": "amhe4269/hcp-fsl-feat:6.0.4_inc0.0rc1"
+            "image": "amhe4269/hcp-fsl-feat:6.0.4_inc0.0rc3"
         },
         "license": "Apache-2.0"
     },
-    "description": "(HPC Compatible) FSL's FEAT (FMRI Expert Analysis Tool). As implemented in this Gear, FEAT first level analysis will act on HCP Preporcessing Pipeline outputs. Check out additional gears for using FSL FEAT with other preprocessing pipelines, or standalone. Voxelwise activation analyses for a single task will be generated. A template FSF design file is required, and all processing steps indicated in the design file will be followed.",
+    "description": "UNDER DEVELOPMENT!! (HPC Compatible) FSL's FEAT (FMRI Expert Analysis Tool). As implemented in this Gear, FEAT first level analysis will act on HCP Preporcessing Pipeline outputs. Check out additional gears for using FSL FEAT with other preprocessing pipelines, or standalone. Voxelwise activation analyses for a single task will be generated. A template FSF design file is required, and all processing steps indicated in the design file will be followed.",
     "environment": {
-        "FSL_DIR": "/opt/fsl",
         "FSF_OUTPUT_FORMAT": "nii.gz",
-        "FSLDIR": "/usr/share/fsl",
+        "FSLDIR": "/opt/fsl-6.0.4",
+        "USER": "flywheel",
         "FSLMULTIFILEQUIT": "TRUE",
         "FSLOUTPUTTYPE": "NIFTI_GZ",
-        "FSLTCLSH": "/usr/bin/tclsh",
-        "FSLWISH": "/usr/bin/wish",
-        "FSL_DIR": "/usr/share/fsl",
+        "FSLTCLSH": "/opt/fsl-6.0.4/bin/fsltclsh",
+        "FSLWISH": "/opt/fsl-6.0.4/bin/fslwish",
         "FSL_PYTHON": "${FSLDIR}/fslpython/envs/fslpython",
         "LD_LIBRARY_PATH": "/usr/share/fsl/lib:/usr/share/fsl/lib",
-        "PATH": "/opt/poetry/bin:/opt/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/share/fsl/bin",
+        "PATH": "/opt/poetry/bin:/opt/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/fsl-6.0.4/bin",
         "REQUESTS_CA_BUNDLE": "/etc/ssl/certs/ca-certificates.crt",
         "python3": "/opt/venv/bin/python3",
         "python": "/opt/venv/bin/python",
@@ -167,5 +166,5 @@
     "name": "hcp-fsl-feat",
     "source": "https://github.com/intermountainneuroimaging/hcp-fsl-feat",
     "url": "http://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FEAT",
-    "version": "6.0.4_inc0.0rc1"
+    "version": "6.0.4_inc0.0rc3"
 }
