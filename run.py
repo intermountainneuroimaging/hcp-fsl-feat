@@ -107,33 +107,7 @@ def main(context: GearToolkitContext):
             # save_metadata(context, gear_options["output_analysis_id_dir"] / "qsiprep")
             pass
 
-    # Cleanup, move all results to the output directory.
-    # post_run should be run regardless of dry-run or exit code.
-    # It will be run even in the event of an error, so that the partial results are
-    # available for debugging.
-    # post_run(
-    #     gear_name=context.manifest["name"],
-    #     gear_options=gear_options,
-    #     analysis_output_dir=str(gear_options["output_analysis_id_dir"]),
-    #     run_label=run_label,
-    #     errors=errors,
-    #     warnings=warnings,
-    # )
-
-    # gear_builder = context.manifest.get("custom").get("gear-builder")
-    # # gear_builder.get("image") should be something like:
-    # # flywheel/bids-qsiprep:0.0.1_0.15.1
-    # container = gear_builder.get("image").split(":")[0]
-    # log.info("%s Gear is done.  Returning %s", container, e_code)
-
-    # Exit the python script (and thus the container) with the exit
-    # code returned by fw_gear_bids_qsiprep.main.run function.
-    # sys.exit(e_code)
-    # return_code = e_code
-    # return return_code
-
-
-# pylint: enable=too-many-locals,too-many-statements
+    return e_code
 
 
 # Only execute if file is run as main, not when imported by another module

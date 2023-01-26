@@ -8,7 +8,7 @@ Version 1.0 Features
 #     -- assume from fsl 3-column format EV name is the same as text file name... if not through error?
 #       ** consider other methods
 
-# -- copy fsl2conn and bids2fsl python scripts from AIM (9) and CBD? use this method for bids formatted inputs. they need to be included in the output
+# --add logic for confounds file. (If confounds file is in design.fsf but not included in options or vise versa)
 
 # -- consider metadata or other cleanup steps. Use new flatten zip method
 #    -- output zip hierarchy will be zip job-id/sub-XX/ses-XX/*.feat

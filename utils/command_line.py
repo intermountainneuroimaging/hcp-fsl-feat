@@ -149,6 +149,7 @@ def exec_command(
             >>> command = build_command_list(command, params, include_keys=False)
             >>> exec_command(command)
     """
+
     log.info("Executing command: \n %s \n\n", " ".join(command))
     if not dry_run:
         # The "shell" parameter is needed for bash output redirects
@@ -195,5 +196,8 @@ def exec_command(
         if returncode != 0:
             log.error(stderr)
             raise RuntimeError("The following command has failed: \n{}".format(command))
+    else:
+        log.info("Dry run mode set.")
+        stdout = None; stderr = None; returncode = 0
 
-        return stdout, stderr, returncode
+    return stdout, stderr, returncode
