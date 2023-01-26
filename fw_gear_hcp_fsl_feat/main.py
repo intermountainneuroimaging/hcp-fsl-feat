@@ -96,13 +96,13 @@ def run(gear_options: dict, app_options: dict) -> int:
         return run_error
     run_error = 0
     # This is what it is all about
-    # stdout, stderr, run_error = exec_command(
-    #     command,
-    #     dry_run=gear_options["dry-run"],
-    #     shell=True,
-    #     cont_output=True,
-    #     cwd=gear_options["work-dir"]
-    # )
+    stdout, stderr, run_error = exec_command(
+        command,
+        dry_run=gear_options["dry-run"],
+        shell=True,
+        cont_output=True,
+        cwd=gear_options["work-dir"]
+    )
 
     if not gear_options["dry-run"]:
 
