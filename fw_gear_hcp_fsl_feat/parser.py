@@ -118,6 +118,6 @@ def unzip_hcp(gear_options, zip_filename):
     """
     hcp_zip = ZipFile(zip_filename, "r")
     log.info("Unzipping hcp outputs, %s", zip_filename)
-    if not gear_options["dry-run"]:
-        hcp_zip.extractall(gear_options["work-dir"])
-        log.debug(f'Unzipped the file to {gear_options["work-dir"]}')
+
+    hcp_zip.extractall(gear_options["work-dir"])
+    log.info(f'Unzipped the file to {gear_options["work-dir"]}')

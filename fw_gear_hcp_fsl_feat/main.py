@@ -146,15 +146,15 @@ def run(gear_options: dict, app_options: dict) -> int:
 def searchfiles(path, dryrun=False) -> list[str]:
     cmd = "ls -d " + path
 
-    log.info("\n %s", cmd)
+    log.debug("\n %s", cmd)
 
     if not dryrun:
         terminal = sp.Popen(
             cmd, shell=True, stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True
         )
         stdout, stderr = terminal.communicate()
-        log.info("\n %s", stdout)
-        log.info("\n %s", stderr)
+        log.debug("\n %s", stdout)
+        log.debug("\n %s", stderr)
 
         files = stdout.strip("\n").split("\n")
         return files
