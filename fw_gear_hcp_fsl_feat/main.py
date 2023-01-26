@@ -75,10 +75,6 @@ def run(gear_options: dict, app_options: dict) -> int:
 
     log.info("This is the beginning of the run file")
 
-    output_analysis_id_dir = Path(gear_options["output-dir"]) / Path(
-        gear_options["destination-id"]
-    )
-
     # prepare confounds file
     app_options = generate_confounds_file(gear_options, app_options)
 
@@ -94,29 +90,32 @@ def run(gear_options: dict, app_options: dict) -> int:
     # generate command
     command = generate_command(gear_options, app_options)
 
-    # Create output directory
-    log.info("Creating output directory %s", output_analysis_id_dir)
-    Path(output_analysis_id_dir).mkdir(parents=True, exist_ok=True)
-
     if error_handler.fired:
         log.critical('Failure: exiting with code 1 due to logged errors')
         run_error = 1
         return run_error
-
+    run_error = 0
     # This is what it is all about
-    stdout, stderr, run_error = exec_command(
-        command,
-        dry_run=gear_options["dry-run"],
-        shell=True,
-        cont_output=True,
-        cwd=gear_options["work-dir"]
-    )
+    # stdout, stderr, run_error = exec_command(
+    #     command,
+    #     dry_run=gear_options["dry-run"],
+    #     shell=True,
+    #     cont_output=True,
+    #     cwd=gear_options["work-dir"]
+    # )
 
     if not gear_options["dry-run"]:
+
         # move result feat directory to outputs
         featdir = searchfiles(os.path.join(gear_options["work-dir"], "*.feat"))
-        shutil.copytree(featdir[0],
-                    os.path.join(output_analysis_id_dir, "sub-" + app_options["sid"], "ses-" + app_options["sesid"], os.path.basename(featdir[0])))
+
+        # Create output directory
+        output_analysis_id_dir = os.path.join(gear_options["destination-id"], "sub-" + app_options["sid"], "ses-" + app_options["sesid"])
+        Path(os.path.join(gear_options["work-dir"], output_analysis_id_dir)).mkdir(parents=True, exist_ok=True)
+
+        log.info("Using output path %s", os.path.join(output_analysis_id_dir, os.path.basename(featdir[0])))
+
+        shutil.copytree(featdir[0], os.path.join(gear_options["work-dir"], output_analysis_id_dir, os.path.basename(featdir[0])))
 
         # flatten html to single file
         flathtml(os.path.join(featdir[0], "report.html"))
@@ -127,7 +126,7 @@ def run(gear_options: dict, app_options: dict) -> int:
 
         # zip feat directory
         terminal = sp.Popen(
-            "zip -r " + os.path.basename(featdir[0]) + ".zip " + str(output_analysis_id_dir),
+            "zip -r " + os.path.join(gear_options["output-dir"], os.path.basename(featdir[0])) + ".zip " + os.path.join(gear_options["work-dir"], gear_options["destination-id"]),
             shell=True,
             stdout=sp.PIPE,
             stderr=sp.PIPE,
