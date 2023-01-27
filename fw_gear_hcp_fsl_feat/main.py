@@ -17,6 +17,7 @@ from collections import OrderedDict
 from zipfile import ZIP_DEFLATED, ZipFile
 import errorhandler
 from typing import List, Tuple, Union
+import stat
 from flywheel_gear_toolkit.utils.zip_tools import zip_output
 
 from utils.command_line import exec_command
@@ -94,7 +95,7 @@ def run(gear_options: dict, app_options: dict) -> int:
         log.critical('Failure: exiting with code 1 due to logged errors')
         run_error = 1
         return run_error
-    run_error = 0
+
     # This is what it is all about
     stdout, stderr, run_error = exec_command(
         command,
@@ -115,18 +116,34 @@ def run(gear_options: dict, app_options: dict) -> int:
 
         log.info("Using output path %s", os.path.join(output_analysis_id_dir, os.path.basename(featdir[0])))
 
-        shutil.copytree(featdir[0], os.path.join(gear_options["work-dir"], output_analysis_id_dir, os.path.basename(featdir[0])))
+        shutil.copytree(featdir[0], os.path.join(gear_options["work-dir"], output_analysis_id_dir, os.path.basename(featdir[0])),dirs_exist_ok=True)
 
         # flatten html to single file
         flathtml(os.path.join(featdir[0], "report.html"))
 
         # make copies of design.fsf and html outside featdir before zipping
-        shutil.copy(os.path.join(featdir[0], "index.html"), os.path.join(gear_options["output-dir"], "report.html"))
+        inpath = os.path.join(featdir[0], "index.html")
+        outpath = os.path.join(featdir[0], "report.html.zip")
+        with ZipFile(outpath, "w", compression=ZIP_DEFLATED) as zf:
+            zf.write(inpath, os.path.basename(inpath))
+
+        shutil.copy(os.path.join(featdir[0], "report.html.zip"), os.path.join(gear_options["output-dir"], "report.html.zip"))
         shutil.copy(os.path.join(featdir[0], "design.fsf"), os.path.join(gear_options["output-dir"], "design.fsf"))
 
         # zip feat directory
         terminal = sp.Popen(
             "zip -r " + os.path.join(gear_options["output-dir"], os.path.basename(featdir[0])) + ".zip " + os.path.join(gear_options["work-dir"], gear_options["destination-id"]),
+            shell=True,
+            stdout=sp.PIPE,
+            stderr=sp.PIPE,
+            universal_newlines=True,
+            cwd=gear_options["output-dir"]
+        )
+        stdout, stderr = terminal.communicate()
+
+
+        terminal = sp.Popen(
+            "chmod -R a+rwx " + os.path.join(gear_options["output-dir"]),
             shell=True,
             stdout=sp.PIPE,
             stderr=sp.PIPE,
