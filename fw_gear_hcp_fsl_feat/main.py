@@ -17,6 +17,7 @@ from collections import OrderedDict
 from zipfile import ZIP_DEFLATED, ZipFile
 import errorhandler
 from typing import List, Tuple, Union
+import nibabel as nib
 import stat
 from flywheel_gear_toolkit.utils.zip_tools import zip_output
 
@@ -76,11 +77,11 @@ def run(gear_options: dict, app_options: dict) -> int:
 
     log.info("This is the beginning of the run file")
 
-    # prepare confounds file
-    app_options = generate_confounds_file(gear_options, app_options)
-
     # prepare inputs files (cp input files w/ correct names to workdir)
     app_options = generate_input_files(gear_options, app_options)
+
+    # prepare confounds file
+    app_options = generate_confounds_file(gear_options, app_options)
 
     # prepare events files
     app_options = generate_event_files(gear_options, app_options)
@@ -130,27 +131,12 @@ def run(gear_options: dict, app_options: dict) -> int:
         shutil.copy(os.path.join(featdir[0], "report.html.zip"), os.path.join(gear_options["output-dir"], "report.html.zip"))
         shutil.copy(os.path.join(featdir[0], "design.fsf"), os.path.join(gear_options["output-dir"], "design.fsf"))
 
-        # zip feat directory
-        terminal = sp.Popen(
-            "zip -r " + os.path.join(gear_options["output-dir"], os.path.basename(featdir[0])) + ".zip " + os.path.join(gear_options["work-dir"], gear_options["destination-id"]),
-            shell=True,
-            stdout=sp.PIPE,
-            stderr=sp.PIPE,
-            universal_newlines=True,
-            cwd=gear_options["output-dir"]
-        )
-        stdout, stderr = terminal.communicate()
+        cmd = "zip -r " + os.path.join(gear_options["output-dir"], os.path.basename(featdir[0])) + ".zip " + gear_options["destination-id"]
+        execute_shell(cmd, dryrun=gear_options["dry-run"], cwd=gear_options["work-dir"])
 
+        cmd = "chmod -R a+rwx " + os.path.join(gear_options["output-dir"])
+        execute_shell(cmd, dryrun=gear_options["dry-run"], cwd=gear_options["output-dir"])
 
-        terminal = sp.Popen(
-            "chmod -R a+rwx " + os.path.join(gear_options["output-dir"]),
-            shell=True,
-            stdout=sp.PIPE,
-            stderr=sp.PIPE,
-            universal_newlines=True,
-            cwd=gear_options["output-dir"]
-        )
-        stdout, stderr = terminal.communicate()
     else:
         shutil.copy(app_options["design_file"], os.path.join(gear_options["output-dir"], "design.fsf"))
 
@@ -179,11 +165,11 @@ def generate_confounds_file(gear_options: dict, app_options: dict):
 
     if app_options["dummy-scans"] > 0:
 
-        # TODO : add white noise replacement for initial dummy volumes??
-        # get volume count from functional path
-        infile = searchfiles(os.path.join(app_options["funcpath"], "*clean.nii.gz"))
+        # replace initial non-steady volumes with white noise
+        app_options = replace_vols(gear_options, app_options)
 
-        cmd = "fslnvols " + infile[0]
+        # get volume count from functional path
+        cmd = "fslnvols " + app_options["func_file"]
         log.debug("\n %s", cmd)
         terminal = sp.Popen(
             cmd, shell=True, stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True
@@ -372,6 +358,45 @@ def generate_design_file(gear_options: dict, app_options: dict):
     return app_options
 
 
+def replace_vols(gear_options: dict, app_options: dict):
+    with tempfile.TemporaryDirectory(dir=gear_options["work-dir"]) as tmpdir:
+        # 1. create a noise image
+        img = nib.load(app_options["func_file"])
+        noise = np.random.randn(img.shape[0], img.shape[1], img.shape[2], app_options["dummy-scans"])
+        nim = nib.Nifti1Image(noise.astype('f'), img.affine, img.header)
+        noise_fname = os.path.join(tmpdir, 'noise.nii.gz')
+        nib.save(nim, noise_fname)
+
+        # 2. from orginal image, create a trimmed series
+        trim_fname = os.path.join(tmpdir, 'trimmed.nii.gz')
+        cmd = "fslroi " + app_options["func_file"] + " " + trim_fname + " " + str(app_options["dummy-scans"]) + " -1"
+        execute_shell(cmd, gear_options["dry-run"])
+
+        # 3. using trimmed file, compute temporal mean
+        tmean_fname = os.path.join(tmpdir, Path(app_options["func_file"]).name.replace(".nii.gz", "_meanfunc.nii.gz"))
+        cmd = "fslmaths " + trim_fname + " -Tmean " + tmean_fname
+        execute_shell(cmd, gear_options["dry-run"])
+
+        # 4 remove temporal mean from trimmed datset
+        demeaned_fname = os.path.join(tmpdir, 'trimmed_zerocenter.nii.gz')
+        cmd = "fslmaths " + trim_fname + " -sub " + tmean_fname + " " + demeaned_fname + " -odt float"
+        execute_shell(cmd, gear_options["dry-run"])
+
+        # 5. concatenate adjusted noise model and trimmed timeseries
+        output_zerocenter = os.path.join(tmpdir, Path(app_options["func_file"]).name.replace(".nii.gz", "_withnoise.nii.gz"))
+        cmd = "fslmerge -t " + output_zerocenter + " " + noise_fname + " " + demeaned_fname
+        execute_shell(cmd, gear_options["dry-run"])
+
+        # 6. add temporal mean back to adjusted dataset
+        final_output = app_options["func_file"].replace(".nii.gz", "_withnoise.nii.gz")
+        cmd = "fslmaths " + output_zerocenter + " -add " + tmean_fname + " " + final_output
+        execute_shell(cmd, gear_options["dry-run"])
+
+        app_options["func_file"] = app_options["func_file"].replace(".nii.gz", "_withnoise.nii.gz")
+
+        return app_options
+
+
 def generate_command(
         gear_options: dict,
         app_options: dict,
@@ -393,6 +418,25 @@ def generate_command(
     cmd.append(app_options["design_file"])
 
     return cmd
+
+
+def execute_shell(cmd, dryrun=False, cwd=os.getcwd()):
+    log.info("\n %s", cmd)
+    if not dryrun:
+        terminal = sp.Popen(
+            cmd,
+            shell=True,
+            stdout=sp.PIPE,
+            stderr=sp.PIPE,
+            universal_newlines=True,
+            cwd=cwd
+        )
+        stdout, stderr = terminal.communicate()
+        log.debug("\n %s", stdout)
+        log.debug("\n %s", stderr)
+
+        return stdout
+
 
 def searchfiles(path, dryrun=False) -> list[str]:
     cmd = "ls -d " + path
